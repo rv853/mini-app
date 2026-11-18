@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rewards Mini App</title>
+    <script src="https://telegram.org"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            text-align: center;
+            padding: 30px 15px;
+        }
+        .card {
+            background-color: #1e1e1e;
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 400px;
+            margin: auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .btn {
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 16px;
+            border-radius: 10px;
+            width: 100%;
+            margin-top: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Welcome to Rewards App</h2>
+        <p>Click below to watch ad and earn points!</p>
+        <button class="btn" onclick="openSmartlink()">Watch Ad & Earn</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        function openSmartlink() {
+            const smartlink = "https://uplcm.com/4/12292071";
+            tg.openLink(smartlink);
+        }
+    </script>
+</body>
+  </html>
+  
