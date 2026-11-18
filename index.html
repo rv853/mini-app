@@ -22,14 +22,14 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         .btn {
+            display: block;
             background-color: #0088cc;
             color: white;
-            border: none;
+            text-decoration: none;
             padding: 15px 25px;
             font-size: 16px;
             border-radius: 10px;
-            width: 100%;
-            margin-top: 15px;
+            margin-top: 20px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -39,18 +39,19 @@
     <div class="card">
         <h2>Welcome to Rewards App</h2>
         <p>Click below to watch ad and earn points!</p>
-        <button class="btn" onclick="openSmartlink()">Watch Ad & Earn</button>
+        <a href="https://uplcm.com/4/12292567" target="_blank" class="btn" onclick="openAd(event)">Watch Ad & Earn</a>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        function openSmartlink() {
-            const smartlink = "https://uplcm.com/4/12292071";
-            tg.openLink(smartlink);
+        function openAd(e) {
+            if (tg && tg.openLink) {
+                e.preventDefault();
+                tg.openLink("https://uplcm.com/4/12292567");
+            }
         }
     </script>
 </body>
-  </html>
-  
+</html>
