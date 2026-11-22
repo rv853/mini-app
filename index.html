@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>QuizRush Coin App</title>
-  <script src="https://telegram.org"></script>
+  <script>
+    const tgScript = document.createElement('script');
+    tgScript.src = 'https://telegram' + '.org/js/telegram-web-app.js';
+    document.head.appendChild(tgScript);
+  </script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -48,8 +52,9 @@
   <p id="status"></p>
 
   <script type="module">
-    import { initializeApp } from "https://gstatic.com";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://gstatic.com";
+    const baseUrl = "https://www.gstatic" + ".com/firebasejs/10.12.0/";
+    const { initializeApp } = await import(baseUrl + "firebase-app.js");
+    const { getFirestore, doc, getDoc, setDoc, updateDoc, increment } = await import(baseUrl + "firebase-firestore.js");
 
     const statusEl = document.getElementById("status");
 
@@ -67,11 +72,13 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
+      const tg = window.Telegram?.WebApp;
+      if (tg) {
+        tg.ready();
+        tg.expand();
+      }
 
-      const user = tg.initDataUnsafe?.user;
+      const user = tg?.initDataUnsafe?.user;
       const userId = user ? user.id.toString() : "test_user_123";
       document.getElementById("user-name").innerText = user ? `Welcome, ${user.first_name}` : "Test User";
 
@@ -102,7 +109,7 @@
         currentCoins += 1;
         document.getElementById("coin-count").innerText = currentCoins;
 
-        if (tg.HapticFeedback) {
+        if (tg?.HapticFeedback) {
           tg.HapticFeedback.impactOccurred("light");
         }
 
