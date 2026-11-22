@@ -3,52 +3,139 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>QuizRush Coin App</title>
+  <title>QuizRush - Play & Earn</title>
   <script>
     const tgScript = document.createElement('script');
     tgScript.src = 'https://telegram' + '.org/js/telegram-web-app.js';
     document.head.appendChild(tgScript);
   </script>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      text-align: center;
-      padding-top: 50px;
-      background: #1c1c1d;
+      background: #121214;
       color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
       user-select: none;
-      margin: 0;
     }
-    h2 { color: #aaaaaa; font-size: 18px; }
-    h1 { font-size: 36px; margin: 20px 0 40px; }
-    #tap-btn {
-      width: 160px;
-      height: 160px;
-      font-size: 24px;
-      font-weight: bold;
-      border-radius: 50%;
-      border: 6px solid #e67e22;
-      background: radial-gradient(circle, #f1c40f, #f39c12);
-      color: #1c1c1d;
+    .header {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1e1e24;
+      padding: 14px 18px;
+      border-radius: 14px;
+      margin-bottom: 24px;
+      border: 1px solid #2c2c35;
+    }
+    .user-info { font-size: 15px; font-weight: 600; color: #d1d1d6; }
+    .coin-badge {
+      background: linear-gradient(135deg, #f1c40f, #f39c12);
+      color: #121214;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 16px;
+    }
+    .quiz-card {
+      width: 100%;
+      max-width: 420px;
+      background: #1e1e24;
+      padding: 24px 20px;
+      border-radius: 18px;
+      border: 1px solid #2c2c35;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    }
+    .q-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #8e8e93;
+      margin-bottom: 12px;
+    }
+    .question-text {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 22px;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .option-btn {
+      width: 100%;
+      padding: 15px 16px;
+      text-align: left;
+      font-size: 16px;
+      font-weight: 600;
+      background: #2a2a32;
+      color: #ffffff;
+      border: 2px solid #383842;
+      border-radius: 12px;
       cursor: pointer;
-      box-shadow: 0 8px 20px rgba(243, 156, 18, 0.4);
-      transition: transform 0.08s;
+      transition: all 0.15s;
     }
-    #tap-btn:active {
-      transform: scale(0.93);
+    .option-btn:active { transform: scale(0.98); }
+    .option-btn.correct {
+      background: rgba(46, 204, 113, 0.2);
+      border-color: #2ecc71;
+      color: #2ecc71;
     }
-    #status {
-      color: #ff6b6b;
-      font-size: 14px;
-      margin-top: 25px;
-      padding: 0 20px;
+    .option-btn.wrong {
+      background: rgba(231, 76, 60, 0.2);
+      border-color: #e74c3c;
+      color: #e74c3c;
     }
+    .option-btn:disabled { cursor: default; }
+    #next-btn {
+      width: 100%;
+      margin-top: 20px;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      background: #3498db;
+      color: #ffffff;
+      cursor: pointer;
+      display: none;
+    }
+    #feedback-msg {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      min-height: 22px;
+    }
+    #status { color: #ff6b6b; font-size: 13px; margin-top: 15px; text-align: center; }
   </style>
 </head>
 <body>
-  <h2 id="user-name">Loading...</h2>
-  <h1>Coins: <span id="coin-count">0</span></h1>
-  <button id="tap-btn">TAP +1</button>
+
+  <div class="header">
+    <div class="user-info" id="user-name">Loading...</div>
+    <div class="coin-badge">🪙 <span id="coin-count">0</span></div>
+  </div>
+
+  <div class="quiz-card" id="quiz-box">
+    <div class="q-meta">
+      <span id="q-number">Question 1</span>
+      <span>Reward: +10 🪙</span>
+    </div>
+    <div class="question-text" id="question-text">Loading Quiz...</div>
+    <div class="options" id="options-container"></div>
+    <div id="feedback-msg"></div>
+    <button id="next-btn">Next Question ➔</button>
+  </div>
+
   <p id="status"></p>
 
   <script type="module">
@@ -56,11 +143,38 @@
     const { initializeApp } = await import(baseUrl + "firebase-app.js");
     const { getFirestore, doc, getDoc, setDoc, updateDoc, increment } = await import(baseUrl + "firebase-firestore.js");
 
-    const statusEl = document.getElementById("status");
+    // YAHAN APNE NAYE QUESTIONS ADD YA EDIT KAR SAKTE HAIN
+    const quizData = [
+      {
+        q: "Bharat ki rajdhani (Capital) kya hai?",
+        options: ["Mumbai", "New Delhi", "Kolkata", "Chennai"],
+        answer: 1
+      },
+      {
+        q: "Duniya ka sabse bada ocean kaunsa hai?",
+        options: ["Indian Ocean", "Atlantic Ocean", "Pacific Ocean", "Arctic Ocean"],
+        answer: 2
+      },
+      {
+        q: "Bitcoin kisne banaya tha?",
+        options: ["Elon Musk", "Satoshi Nakamoto", "Vitalik Buterin", "Bill Gates"],
+        answer: 1
+      },
+      {
+        q: "Chand (Moon) par kadam rakhne wale pehle vyakti kaun the?",
+        options: ["Rakesh Sharma", "Yuri Gagarin", "Neil Armstrong", "Buzz Aldrin"],
+        answer: 2
+      },
+      {
+        q: "1 Byte mein kitne Bits hote hain?",
+        options: ["4 Bits", "8 Bits", "16 Bits", "32 Bits"],
+        answer: 1
+      }
+    ];
 
     const firebaseConfig = {
       apiKey: "AIzaSyCim4XYvTM2BVjJL-kNr9pA64EI1_h7eKU",
-      authDomain: "quizrush-77af2.firebaseapp.com",
+      authDomain: "://firebaseapp.com",
       projectId: "quizrush-77af2",
       storageBucket: "quizrush-77af2.firebasestorage.app",
       messagingSenderId: "969926311396",
@@ -68,61 +182,105 @@
       measurementId: "G-WMEXJMYW54"
     };
 
-    try {
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
+    const statusEl = document.getElementById("status");
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-      const tg = window.Telegram?.WebApp;
-      if (tg) {
-        tg.ready();
-        tg.expand();
-      }
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
 
-      const user = tg?.initDataUnsafe?.user;
-      const userId = user ? user.id.toString() : "test_user_123";
-      document.getElementById("user-name").innerText = user ? `Welcome, ${user.first_name}` : "Test User";
+    const user = tg?.initDataUnsafe?.user;
+    const userId = user ? user.id.toString() : "test_user_123";
+    document.getElementById("user-name").innerText = user ? `👤 ${user.first_name}` : "👤 Test User";
 
-      const userRef = doc(db, "users", userId);
-      let currentCoins = 0;
+    const userRef = doc(db, "users", userId);
+    let currentCoins = 0;
+    let currentQIndex = 0;
 
-      async function loadCoins() {
-        try {
-          const docSnap = await getDoc(userRef);
-          if (docSnap.exists()) {
-            currentCoins = docSnap.data().coins || 0;
-          } else {
-            await setDoc(userRef, {
-              coins: 0,
-              username: user?.username || "",
-              firstName: user?.first_name || "Guest"
-            });
-          }
-          document.getElementById("coin-count").innerText = currentCoins;
-        } catch (err) {
-          statusEl.innerText = "Database Error: " + err.message;
+    async function loadUserData() {
+      try {
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists()) {
+          currentCoins = docSnap.data().coins || 0;
+        } else {
+          await setDoc(userRef, {
+            coins: 0,
+            username: user?.username || "",
+            firstName: user?.first_name || "Guest"
+          });
         }
+        document.getElementById("coin-count").innerText = currentCoins;
+      } catch (err) {
+        statusEl.innerText = "Database Error: " + err.message;
       }
+    }
 
-      loadCoins();
+    function renderQuestion() {
+      const item = quizData[currentQIndex];
+      document.getElementById("q-number").innerText = `Question ${currentQIndex + 1} of ${quizData.length}`;
+      document.getElementById("question-text").innerText = item.q;
+      document.getElementById("feedback-msg").innerText = "";
+      document.getElementById("next-btn").style.display = "none";
 
-      document.getElementById("tap-btn").addEventListener("click", async () => {
-        currentCoins += 1;
+      const container = document.getElementById("options-container");
+      container.innerHTML = "";
+
+      item.options.forEach((optText, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.innerText = optText;
+        btn.onclick = () => checkAnswer(idx, btn);
+        container.appendChild(btn);
+      });
+    }
+
+    async function checkAnswer(selectedIndex, clickedBtn) {
+      const item = quizData[currentQIndex];
+      const allBtns = document.querySelectorAll(".option-btn");
+      allBtns.forEach(b => b.disabled = true);
+
+      const feedbackEl = document.getElementById("feedback-msg");
+
+      if (selectedIndex === item.answer) {
+        clickedBtn.classList.add("correct");
+        feedbackEl.style.color = "#2ecc71";
+        feedbackEl.innerText = "🎉 Sahi Jawab! +10 Coins";
+        currentCoins += 10;
         document.getElementById("coin-count").innerText = currentCoins;
 
-        if (tg?.HapticFeedback) {
-          tg.HapticFeedback.impactOccurred("light");
-        }
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
 
         try {
-          await updateDoc(userRef, { coins: increment(1) });
+          await updateDoc(userRef, { coins: increment(10) });
         } catch (err) {
           statusEl.innerText = "Save Error: " + err.message;
         }
-      });
+      } else {
+        clickedBtn.classList.add("wrong");
+        allBtns[item.answer].classList.add("correct");
+        feedbackEl.style.color = "#e74c3c";
+        feedbackEl.innerText = "❌ Galat Jawab!";
 
-    } catch (e) {
-      statusEl.innerText = "Setup Error: " + e.message;
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("error");
+      }
+
+      document.getElementById("next-btn").style.display = "block";
     }
+
+    document.getElementById("next-btn").addEventListener("click", () => {
+      currentQIndex++;
+      if (currentQIndex >= quizData.length) {
+        currentQIndex = 0; // Loop back to start (or customize completion screen)
+      }
+      renderQuestion();
+    });
+
+    loadUserData();
+    renderQuestion();
   </script>
 </body>
 </html>
+
