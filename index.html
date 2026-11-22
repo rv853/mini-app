@@ -1,57 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rewards Mini App</title>
-    <script src="https://telegram.org"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
-            text-align: center;
-            padding: 30px 15px;
-        }
-        .card {
-            background-color: #1e1e1e;
-            padding: 25px;
-            border-radius: 15px;
-            max-width: 400px;
-            margin: auto;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-        .btn {
-            display: block;
-            background-color: #0088cc;
-            color: white;
-            text-decoration: none;
-            padding: 15px 25px;
-            font-size: 16px;
-            border-radius: 10px;
-            margin-top: 20px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-    </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram Coin Mini App</title>
+  <script src="https://telegram.org"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #1c1c1d; color: white; user-select: none; }
+    button { padding: 30px 45px; font-size: 22px; border-radius: 50%; border: none; background: #f39c12; color: white; cursor: pointer; }
+    button:active { transform: scale(0.95); }
+  </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Welcome to Rewards App</h2>
-        <p>Click below to watch ad and earn points!</p>
-        <a href="https://uplcm.com/4/12292567" target="_blank" class="btn" onclick="openAd(event)">Watch Ad & Earn</a>
-    </div>
+  <h2 id="user-name">Loading...</h2>
+  <h1>Coins: <span id="coin-count">0</span></h1>
+  <button id="tap-btn">TAP +1</button>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+  <script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://gstatic.com";
 
-        function openAd(e) {
-            if (tg && tg.openLink) {
-                e.preventDefault();
-                tg.openLink("https://uplcm.com/4/12292567");
-            }
-        }
-    </script>
+    // Paste your exact firebaseConfig object from Firebase Console here
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_://firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    const user = tg.initDataUnsafe?.user;
+    const userId = user ? user.id.toString() : "test_user_123";
+    document.getElementById("user-name").innerText = user ? `Welcome, ${user.first_name}` : "Test User";
+
+    const userRef = doc(db, "users", userId);
+    let currentCoins = 0;
+
+    async function loadCoins() {
+      const docSnap = await getDoc(userRef);
+      if (docSnap.exists()) {
+        currentCoins = docSnap.data().coins || 0;
+      } else {
+        await setDoc(userRef, { coins: 0, username: user?.username || "" });
+      }
+      document.getElementById("coin-count").innerText = currentCoins;
+    }
+    loadCoins();
+
+    document.getElementById("tap-btn").addEventListener("click", async () => {
+      currentCoins += 1;
+      document.getElementById("coin-count").innerText = currentCoins;
+      await updateDoc(userRef, { coins: increment(1) });
+    });
+  </script>
 </body>
 </html>
