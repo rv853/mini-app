@@ -54,11 +54,11 @@
     .progress-fill { background: #2ecc71; height: 100%; width: 0%; transition: 0.3s; }
     .nav {
       position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a20;
-      display: flex; border-top: 1px solid #2c2c35; padding: 10px 0;
+      display: flex; border-top: 1px solid #2c2c35; padding: 12px 0; z-index: 999;
     }
     .nav-btn {
       flex: 1; background: none; border: none; color: #8e8e93;
-      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-size: 14px; font-weight: 600; cursor: pointer;
     }
     .nav-btn.active { color: #f39c12; }
     .history-item {
@@ -70,13 +70,12 @@
 </head>
 <body>
 <div class="container">
-  <!-- Top Header -->
   <div class="top-bar">
     <span id="user-name" style="font-weight:600;">👤 Loading...</span>
     <span class="coin-pill">🪙 <span id="coin-count">0</span></span>
   </div>
 
-  <!-- TAB 1: HOME PAGE -->
+  <!-- TAB 1: HOME -->
   <div id="tab-home">
     <div class="card">
       <h2>🎯 Daily Quiz Challenge</h2>
@@ -84,7 +83,7 @@
       <div style="background:#2a2a32; padding:12px; border-radius:10px; margin-bottom:16px; font-size:14px;">
         Aaj ke bache hue sawal: <b id="daily-left" style="color:#f39c12;">5 / 5</b>
       </div>
-      <button class="btn btn-primary" id="start-quiz-btn" onclick="switchTab('quiz')">Play Daily Quiz ➔</button>
+      <button class="btn btn-primary" onclick="openTab('quiz')">Play Daily Quiz ➔</button>
     </div>
 
     <div class="card">
@@ -95,11 +94,11 @@
         <span id="goal-text">0 / 1500 Coins</span>
       </div>
       <div class="progress-bg"><div class="progress-fill" id="goal-bar"></div></div>
-      <button class="btn btn-blue" style="margin-top:10px;" onclick="switchTab('wallet')">Go to Wallet</button>
+      <button class="btn btn-blue" style="margin-top:10px;" onclick="openTab('wallet')">Go to Wallet</button>
     </div>
   </div>
 
-  <!-- TAB 2: QUIZ PAGE -->
+  <!-- TAB 2: QUIZ -->
   <div id="tab-quiz" class="hidden">
     <div class="card" id="quiz-active-box">
       <div style="display:flex; justify-content:space-between; font-size:13px; color:#8e8e93; margin-bottom:10px;">
@@ -115,11 +114,11 @@
     <div class="card hidden" id="quiz-limit-box" style="text-align:center;">
       <h2>⏳ Aaj Ki Limit Poori Hui!</h2>
       <p class="sub" style="margin-top:8px;">Aapne aaj ke sabhi 5 sawal khel liye hain. Naye sawalon ke liye kal wapas aayein!</p>
-      <button class="btn btn-primary" onclick="switchTab('home')">Back to Home</button>
+      <button class="btn btn-primary" onclick="openTab('home')">Back to Home</button>
     </div>
   </div>
 
-  <!-- TAB 3: WALLET & REDEEM PAGE -->
+  <!-- TAB 3: WALLET -->
   <div id="tab-wallet" class="hidden">
     <div class="card">
       <h2>👛 My Wallet</h2>
@@ -127,7 +126,6 @@
       <div style="font-size:28px; font-weight:800; color:#f39c12; margin-bottom:16px;">
         🪙 <span id="wallet-coins">0</span> <span style="font-size:15px; color:#aaa;">(≈ ₹<span id="rupee-val">0.00</span>)</span>
       </div>
-      
       <button class="btn btn-primary" id="withdraw-btn" disabled>Need 1500 Coins</button>
       <p id="withdraw-msg" style="font-size:13px; margin-top:10px; text-align:center;"></p>
     </div>
@@ -141,12 +139,24 @@
   <p id="status-msg"></p>
 </div>
 
-<!-- Bottom Navigation -->
 <div class="nav">
-  <button class="nav-btn active" id="nav-home" onclick="switchTab('home')">🏠 Home</button>
-  <button class="nav-btn" id="nav-quiz" onclick="switchTab('quiz')">❓ Daily Quiz</button>
-  <button class="nav-btn" id="nav-wallet" onclick="switchTab('wallet')">💰 Wallet</button>
+  <button class="nav-btn active" id="nav-home" onclick="openTab('home')">🏠 Home</button>
+  <button class="nav-btn" id="nav-quiz" onclick="openTab('quiz')">❓ Daily Quiz</button>
+  <button class="nav-btn" id="nav-wallet" onclick="openTab('wallet')">💰 Wallet</button>
 </div>
+
+<script>
+  function openTab(tabName) {
+    ['home', 'quiz', 'wallet'].forEach(function(t) {
+      document.getElementById('tab-' + t).classList.add('hidden');
+      document.getElementById('nav-' + t).classList.remove('active');
+    });
+    document.getElementById('tab-' + tabName).classList.remove('hidden');
+    document.getElementById('nav-' + tabName).classList.add('active');
+    if (tabName === 'quiz' && window.renderQuiz) window.renderQuiz();
+    if (tabName === 'wallet' && window.fetchHistory) window.fetchHistory();
+  }
+</script>
 
 <script type="module">
   const baseUrl = "https://www.gstatic" + ".com/firebasejs/10.12.0/";
@@ -155,13 +165,13 @@
 
   const DAILY_LIMIT = 5;
   const MIN_WITHDRAW = 1500;
-  const TODAY_STR = new Date().toISOString().split('T')[0];
+  const TODAY_STR = new Date().toISOString().slice(0, 10);
 
   const quizQuestions = [
     { q: "Bharat ki rajdhani kya hai?", options: ["Mumbai", "New Delhi", "Kolkata", "Chennai"], ans: 1 },
     { q: "Duniya ka sabse bada ocean kaunsa hai?", options: ["Indian", "Atlantic", "Pacific", "Arctic"], ans: 2 },
     { q: "1 Byte mein kitne Bits hote hain?", options: ["4 Bits", "8 Bits", "16 Bits", "32 Bits"], ans: 1 },
-    { q: "Surya ke sabse kareeb kaunsa grah (planet) hai?", options: ["Earth", "Mars", "Venus", "Mercury"], ans: 3 },
+    { q: "Surya ke sabse kareeb kaunsa grah hai?", options: ["Earth", "Mars", "Venus", "Mercury"], ans: 3 },
     { q: "Cricket team mein kitne khiladi khelte hain?", options: ["9", "10", "11", "12"], ans: 2 }
   ];
 
@@ -189,42 +199,29 @@
   let coins = 0;
   let playedToday = 0;
 
-  window.switchTab = function(tabName) {
-    ['home', 'quiz', 'wallet'].forEach(t => {
-      document.getElementById('tab-' + t).classList.add('hidden');
-      document.getElementById('nav-' + t).classList.remove('active');
-    });
-    document.getElementById('tab-' + tabName).classList.remove('hidden');
-    document.getElementById('nav-' + tabName).classList.add('active');
-    if (tabName === 'quiz') setupQuizScreen();
-    if (tabName === 'wallet') loadHistory();
-  };
-
   function updateUI() {
     document.getElementById("coin-count").innerText = coins;
     document.getElementById("wallet-coins").innerText = coins;
     document.getElementById("rupee-val").innerText = ((coins / 1500) * 10).toFixed(2);
-    
     const left = Math.max(0, DAILY_LIMIT - playedToday);
-    document.getElementById("daily-left").innerText = `${left} / ${DAILY_LIMIT}`;
-    
+    document.getElementById("daily-left").innerText = left + " / " + DAILY_LIMIT;
     const pct = Math.min(100, (coins / MIN_WITHDRAW) * 100);
     document.getElementById("goal-bar").style.width = pct + "%";
-    document.getElementById("goal-text").innerText = `${coins} / ${MIN_WITHDRAW} Coins`;
-
+    document.getElementById("goal-text").innerText = coins + " / " + MIN_WITHDRAW + " Coins";
     const wBtn = document.getElementById("withdraw-btn");
     if (coins >= MIN_WITHDRAW) {
       wBtn.disabled = false;
       wBtn.innerText = "Redeem ₹10 Code Now";
     } else {
       wBtn.disabled = true;
-      wBtn.innerText = `Need ${MIN_WITHDRAW - coins} More Coins`;
+      wBtn.innerText = "Need " + (MIN_WITHDRAW - coins) + " More Coins";
     }
   }
 
-  async function initUser() {
-    try {
-      const snap = await getDoc(userRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        coins = data.coins || 0;
+  window.renderQuiz = function() {
+    if (playedToday >= DAILY_LIMIT) {
+      document.getElementById("quiz-active-box").classList.add("hidden");
+      document.getElementById("quiz-limit-box").classList.remove("hidden");
+      return;
+    }
+  
