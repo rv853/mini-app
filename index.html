@@ -101,7 +101,6 @@
   <button id="n-quiz" onclick="go('quiz')">❓ Quiz</button>
   <button id="n-wallet" onclick="go('wallet')">💰 Wallet</button>
 </div>
-
 <script>
   function go(t) {
     ['home', 'quiz', 'wallet'].forEach(x => {
@@ -204,7 +203,47 @@
   document.getElementById("nxt-btn").onclick = window.loadQ;
 
   document.getElementById("ad-btn").onclick = async () => {
+    const ab = document.getElementById("ad-btn");
+    ab.disabled = true; ab.innerText = "Showing Ad...";
+    setTimeout(async () => {
+      qLeft += 5;
+      await updateDoc(ref, { qLeft: qLeft });
+      ab.disabled = false; ab.innerText = "📺 Watch Ad (+5 Quiz)";
+      ui(); window.loadQ();
+    }, 2000);
+  };
 
-   
+  document.getElementById("w-btn").onclick = async () => {
+    if (coins < MIN) return;
+    document.getElementById("w-btn").disabled = true;
+    await updateDoc(ref, { coins: increment(-MIN) });
+    coins -= MIN;
+    await addDoc(collection(db, "withdrawals"), { userId: uid, firstName: name, amountINR: 10, redeemCode: "Processing...", status: "pending", createdAt: new Date().toISOString() });
+    document.getElementById("w-msg").style.color = "#2ecc71";
+    document.getElementById("w-msg").innerText = "✅ Request Sent!";
+    ui(); window.loadH();
+  };
 
+  window.loadH = async () => {
+    const snap = await getDocs(query(collection(db, "withdrawals"), where("userId", "==", uid)));
+    if (snap.empty) return;
+    const list = document.getElementById("h-list"); list.innerHTML = "";
+    snap.forEach(d => {
+      const x = d.data();
+      list.innerHTML += '<div class="h-item"><b>₹10 Code</b> (' + x.status.toUpperCase() + ')<br><span style="color:#f1c40f;font-family:monospace;">Code: ' + x.redeemCode + '</span></div>';
+    });
+  };
 
+  try {
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      const d = snap.data();
+      coins = d.coins || 0; qIdx = d.qIdx || 0; qLeft = d.qLeft ?? 0;
+    } else {
+      await setDoc(ref, { coins: 0, firstName: name, qLeft: 0, qIdx: 0 });
+    }
+    ui();
+  } catch (e) { document.getElementById("err").innerText = e.message; }
+</script>
+</body>
+</html>
