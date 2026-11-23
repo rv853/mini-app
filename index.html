@@ -101,6 +101,9 @@
   <button id="n-quiz" onclick="go('quiz')">❓ Quiz</button>
   <button id="n-wallet" onclick="go('wallet')">💰 Wallet</button>
 </div>
+<script src="https://gstatic.com"></script>
+<script src="https://gstatic.com"></script>
+
 <script>
   function go(t) {
     ['home', 'quiz', 'wallet'].forEach(x => {
@@ -109,15 +112,26 @@
     });
     document.getElementById('t-' + t).classList.remove('hide');
     document.getElementById('n-' + t).classList.add('act');
-    if (t === 'quiz' && window.loadQ) window.loadQ();
-    if (t === 'wallet' && window.loadH) window.loadH();
+    if (t === 'quiz') loadQ();
+    if (t === 'wallet') loadH();
   }
-</script>
 
-<script type="module">
-  const u = "https://www.gstatic" + ".com/firebasejs/10.12.0/";
-  const { initializeApp } = await import(u + "firebase-app.js");
-  const { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc, query, where, getDocs } = await import(u + "firebase-firestore.js");
+  // 1. Naam turant show karein (Loading hatane ke liye)
+  const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+  const usr = tg?.initDataUnsafe?.user;
+  const uid = usr ? usr.id.toString() : "test_user_123";
+  const name = usr ? usr.first_name : "Player";
+  document.getElementById("uname").innerText = "👤 " + name;
+
+  // 2. Firebase Setup
+  firebase.initializeApp({
+    apiKey: "AIzaSyCim4XYvTM2BVjJL-kNr9pA64EI1_h7eKU",
+    authDomain: "://firebaseapp.com",
+    projectId: "quizrush-77af2"
+  });
+  const db = firebase.firestore();
+  const ref = db.collection("users").doc(uid);
 
   const MIN = 1500;
   const Qs = [
@@ -128,24 +142,6 @@
     { q: "Cricket team mein kitne khiladi hote hain?", o: ["9", "10", "11", "12"], a: 2 }
   ];
 
-  const app = initializeApp({
-    apiKey: "AIzaSyCim4XYvTM2BVjJL-kNr9pA64EI1_h7eKU",
-    authDomain: "quizrush-77af2" + ".firebaseapp.com",
-    projectId: "quizrush-77af2",
-    storageBucket: "quizrush-77af2" + ".firebasestorage.app",
-    messagingSenderId: "969926311396",
-    appId: "1:969926311396:web:d9d14e08143e007b41dbf1"
-  });
-  const db = getFirestore(app);
-  const tg = window.Telegram?.WebApp;
-  if (tg) { tg.ready(); tg.expand(); }
-
-  const usr = tg?.initDataUnsafe?.user;
-  const uid = usr ? usr.id.toString() : "test_user_123";
-  const name = usr ? usr.first_name : "Test User";
-  document.getElementById("uname").innerText = "👤 " + name;
-
-  const ref = doc(db, "users", uid);
   let coins = 0, qLeft = 0, qIdx = 0;
 
   function ui() {
@@ -160,7 +156,7 @@
     wb.innerText = coins >= MIN ? "Redeem ₹10 Code Now" : "Need " + (MIN - coins) + " More Coins";
   }
 
-  window.loadQ = () => {
+  function loadQ() {
     if (qLeft <= 0) {
       document.getElementById("q-box").classList.add("hide");
       document.getElementById("q-end").classList.remove("hide");
@@ -178,7 +174,7 @@
     item.o.forEach((txt, i) => {
       const b = document.createElement("button");
       b.className = "opt"; b.innerText = txt;
-      b.onclick = async () => {
+      b.onclick = () => {
         document.querySelectorAll(".opt").forEach(x => x.disabled = true);
         qLeft--; qIdx++;
         let win = 0;
@@ -195,55 +191,62 @@
         }
         ui();
         document.getElementById("nxt-btn").classList.remove("hide");
-        await updateDoc(ref, { coins: increment(win), qLeft: qLeft, qIdx: qIdx });
+        ref.update({ coins: firebase.firestore.FieldValue.increment(win), qLeft: qLeft, qIdx: qIdx });
       };
       box.appendChild(b);
     });
-  };
-  document.getElementById("nxt-btn").onclick = window.loadQ;
+  }
+  document.getElementById("nxt-btn").onclick = loadQ;
 
-  document.getElementById("ad-btn").onclick = async () => {
+  document.getElementById("ad-btn").onclick = () => {
     const ab = document.getElementById("ad-btn");
     ab.disabled = true; ab.innerText = "Showing Ad...";
-    setTimeout(async () => {
+    setTimeout(() => {
       qLeft += 5;
-      await updateDoc(ref, { qLeft: qLeft });
+      ref.set({ qLeft: qLeft }, { merge: true });
       ab.disabled = false; ab.innerText = "📺 Watch Ad (+5 Quiz)";
-      ui(); window.loadQ();
+      ui(); loadQ();
     }, 2000);
   };
 
-  document.getElementById("w-btn").onclick = async () => {
+  document.getElementById("w-btn").onclick = () => {
     if (coins < MIN) return;
     document.getElementById("w-btn").disabled = true;
-    await updateDoc(ref, { coins: increment(-MIN) });
     coins -= MIN;
-    await addDoc(collection(db, "withdrawals"), { userId: uid, firstName: name, amountINR: 10, redeemCode: "Processing...", status: "pending", createdAt: new Date().toISOString() });
+    ref.update({ coins: firebase.firestore.FieldValue.increment(-MIN) });
+    db.collection("withdrawals").add({ userId: uid, firstName: name, amountINR: 10, redeemCode: "Processing...", status: "pending", createdAt: new Date().toISOString() });
     document.getElementById("w-msg").style.color = "#2ecc71";
     document.getElementById("w-msg").innerText = "✅ Request Sent!";
-    ui(); window.loadH();
+    ui(); loadH();
   };
 
-  window.loadH = async () => {
-    const snap = await getDocs(query(collection(db, "withdrawals"), where("userId", "==", uid)));
-    if (snap.empty) return;
-    const list = document.getElementById("h-list"); list.innerHTML = "";
-    snap.forEach(d => {
-      const x = d.data();
-      list.innerHTML += '<div class="h-item"><b>₹10 Code</b> (' + x.status.toUpperCase() + ')<br><span style="color:#f1c40f;font-family:monospace;">Code: ' + x.redeemCode + '</span></div>';
+  function loadH() {
+    db.collection("withdrawals").where("userId", "==", uid).get().then(snap => {
+      if (snap.empty) return;
+      const list = document.getElementById("h-list"); list.innerHTML = "";
+      snap.forEach(d => {
+        const x = d.data();
+        list.innerHTML += '<div class="h-item"><b>₹10 Code</b> (' + x.status.toUpperCase() + ')<br><span style="color:#f1c40f;font-family:monospace;">Code: ' + x.redeemCode + '</span></div>';
+      });
     });
-  };
+  }
 
-  try {
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
+  ref.get().then(snap => {
+    if (snap.exists) {
       const d = snap.data();
       coins = d.coins || 0; qIdx = d.qIdx || 0; qLeft = d.qLeft ?? 0;
     } else {
-      await setDoc(ref, { coins: 0, firstName: name, qLeft: 0, qIdx: 0 });
+      ref.set({ coins: 0, firstName: name, qLeft: 0, qIdx: 0 });
     }
     ui();
-  } catch (e) { document.getElementById("err").innerText = e.message; }
+  }).catch(e => { document.getElementById("err").innerText = e.message; });
 </script>
 </body>
 </html>
+
+  
+    
+  
+  
+ 
+   
