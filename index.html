@@ -19,9 +19,10 @@
     .hide { display: none !important; }
     h2 { font-size: 19px; margin-bottom: 8px; }
     .sub { color: #9a9aa2; font-size: 14px; margin-bottom: 14px; }
-    .btn { width: 100%; padding: 14px; font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; }
+    .btn { width: 100%; padding: 14px; font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; margin-top: 6px; }
     .btn-y { background: #f39c12; color: #121214; }
     .btn-b { background: #3498db; color: #fff; }
+    .btn-g { background: #2ecc71; color: #121214; }
     .btn:disabled { background: #333; color: #777; }
     .opt { width: 100%; padding: 13px; text-align: left; font-size: 15px; font-weight: 600; background: #2a2a32; color: #fff; border: 2px solid #383842; border-radius: 12px; margin-bottom: 9px; cursor: pointer; }
     .opt.ok { background: rgba(46,204,113,0.2); border-color: #2ecc71; color: #2ecc71; }
@@ -41,44 +42,42 @@
     <span class="pill">🪙 <span id="coins">0</span></span>
   </div>
 
-  <!-- HOME -->
   <div id="t-home">
     <div class="card">
-      <h2>🎯 Daily Quiz Challenge</h2>
-      <p class="sub">Rozana 5 sawal khelein aur har sahi jawab par <b>+10 Coins</b> kamayein!</p>
-      <div style="background:#2a2a32; padding:10px; border-radius:10px; margin-bottom:14px; font-size:14px;">
-        Aaj ke bache hue sawal: <b id="d-left" style="color:#f39c12;">5 / 5</b>
+      <h2>🎯 Watch Ad & Play Quiz</h2>
+      <p class="sub">1 Ad dekhein ➔ <b>5 Quiz (25 Coins)</b> unlock karein!</p>
+      <div style="background:#2a2a32; padding:10px; border-radius:10px; margin-bottom:12px; font-size:14px;">
+        Unlocked Quiz: <b id="d-left" style="color:#f39c12;">0</b>
       </div>
-      <button class="btn btn-y" onclick="go('quiz')">Play Daily Quiz ➔</button>
+      <button class="btn btn-y" onclick="go('quiz')">Start Earning ➔</button>
     </div>
     <div class="card">
       <h2>🎁 ₹10 Redeem Code Goal</h2>
-      <p class="sub">1500 Coins poore hote hi ₹10 Google Play Redeem Code lein.</p>
+      <p class="sub">1500 Coins = ₹10 Google Play Redeem Code</p>
       <div style="display:flex; justify-content:space-between; font-size:13px;"><span>Progress</span><span id="g-txt">0 / 1500</span></div>
       <div class="bar-bg"><div class="bar-fill" id="g-bar"></div></div>
-      <button class="btn btn-b" style="margin-top:8px;" onclick="go('wallet')">Go to Wallet</button>
+      <button class="btn btn-b" onclick="go('wallet')">Go to Wallet</button>
     </div>
   </div>
 
-  <!-- QUIZ -->
   <div id="t-quiz" class="hide">
-    <div class="card" id="q-box">
+    <div class="card hide" id="q-box">
       <div style="display:flex; justify-content:space-between; font-size:13px; color:#8e8e93; margin-bottom:8px;">
-        <span id="q-num">Question 1/5</span><span>+10 Coins</span>
+        <span id="q-num">Quiz</span><span>+5 Coins</span>
       </div>
       <h2 id="q-txt" style="margin-bottom:14px;">Loading...</h2>
       <div id="opts"></div>
       <p id="q-fb" style="text-align:center; font-weight:700; margin:10px 0;"></p>
       <button class="btn btn-b hide" id="nxt-btn">Next Question ➔</button>
     </div>
-    <div class="card hide" id="q-end" style="text-align:center;">
-      <h2>⏳ Aaj Ki Limit Poori Hui!</h2>
-      <p class="sub" style="margin-top:8px;">Aapne aaj ke sabhi 5 sawal khel liye hain. Kal wapas aayein!</p>
-      <button class="btn btn-y" onclick="go('home')">Back to Home</button>
+    <div class="card" id="q-end" style="text-align:center;">
+      <h2>🔒 Quiz Locked!</h2>
+      <p class="sub" style="margin-top:8px;">1 Reward Ad dekhein aur turant <b>5 Quiz (25 Coins tak)</b> unlock karein!</p>
+      <button class="btn btn-g" id="ad-btn">📺 Watch Ad (+5 Quiz)</button>
+      <button class="btn btn-b" onclick="go('home')">Back to Home</button>
     </div>
   </div>
 
-  <!-- WALLET -->
   <div id="t-wallet" class="hide">
     <div class="card">
       <h2>👛 My Wallet</h2>
@@ -91,7 +90,7 @@
     </div>
     <div class="card">
       <h2>🎁 My Redeem Codes</h2>
-      <div id="h-list"><p class="sub">Abhi tak koi redeem request nahi hai.</p></div>
+      <div id="h-list"><p class="sub">Abhi tak koi request nahi hai.</p></div>
     </div>
   </div>
   <p id="err" style="color:#ff6b6b; font-size:13px; text-align:center;"></p>
@@ -99,7 +98,7 @@
 
 <div class="nav">
   <button class="act" id="n-home" onclick="go('home')">🏠 Home</button>
-  <button id="n-quiz" onclick="go('quiz')">❓ Daily Quiz</button>
+  <button id="n-quiz" onclick="go('quiz')">❓ Quiz</button>
   <button id="n-wallet" onclick="go('wallet')">💰 Wallet</button>
 </div>
 
@@ -121,7 +120,7 @@
   const { initializeApp } = await import(u + "firebase-app.js");
   const { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc, query, where, getDocs } = await import(u + "firebase-firestore.js");
 
-  const LIMIT = 5, MIN = 1500, TODAY = new Date().toISOString().slice(0, 10);
+  const MIN = 1500;
   const Qs = [
     { q: "Bharat ki rajdhani kya hai?", o: ["Mumbai", "New Delhi", "Kolkata", "Chennai"], a: 1 },
     { q: "Sabse bada ocean kaunsa hai?", o: ["Indian", "Atlantic", "Pacific", "Arctic"], a: 2 },
@@ -148,13 +147,13 @@
   document.getElementById("uname").innerText = "👤 " + name;
 
   const ref = doc(db, "users", uid);
-  let coins = 0, played = 0;
+  let coins = 0, qLeft = 0, qIdx = 0;
 
   function ui() {
     document.getElementById("coins").innerText = coins;
     document.getElementById("w-coins").innerText = coins;
     document.getElementById("r-val").innerText = ((coins / 1500) * 10).toFixed(2);
-    document.getElementById("d-left").innerText = Math.max(0, LIMIT - played) + " / " + LIMIT;
+    document.getElementById("d-left").innerText = qLeft;
     document.getElementById("g-bar").style.width = Math.min(100, (coins / MIN) * 100) + "%";
     document.getElementById("g-txt").innerText = coins + " / " + MIN;
     const wb = document.getElementById("w-btn");
@@ -163,15 +162,15 @@
   }
 
   window.loadQ = () => {
-    if (played >= LIMIT) {
+    if (qLeft <= 0) {
       document.getElementById("q-box").classList.add("hide");
       document.getElementById("q-end").classList.remove("hide");
       return;
     }
     document.getElementById("q-box").classList.remove("hide");
     document.getElementById("q-end").classList.add("hide");
-    const item = Qs[played % Qs.length];
-    document.getElementById("q-num").innerText = "Question " + (played + 1) + "/" + LIMIT;
+    const item = Qs[qIdx % Qs.length];
+    document.getElementById("q-num").innerText = "Quiz Left: " + qLeft;
     document.getElementById("q-txt").innerText = item.q;
     document.getElementById("q-fb").innerText = "";
     document.getElementById("nxt-btn").classList.add("hide");
@@ -179,17 +178,16 @@
     box.innerHTML = "";
     item.o.forEach((txt, i) => {
       const b = document.createElement("button");
-      b.className = "opt";
-      b.innerText = txt;
+      b.className = "opt"; b.innerText = txt;
       b.onclick = async () => {
         document.querySelectorAll(".opt").forEach(x => x.disabled = true);
-        played++;
+        qLeft--; qIdx++;
         let win = 0;
         if (i === item.a) {
           b.classList.add("ok");
           document.getElementById("q-fb").style.color = "#2ecc71";
-          document.getElementById("q-fb").innerText = "🎉 Sahi Jawab! +10 Coins";
-          win = 10; coins += 10;
+          document.getElementById("q-fb").innerText = "🎉 Sahi Jawab! +5 Coins";
+          win = 5; coins += 5;
         } else {
           b.classList.add("no");
           document.querySelectorAll(".opt")[item.a].classList.add("ok");
@@ -198,11 +196,15 @@
         }
         ui();
         document.getElementById("nxt-btn").classList.remove("hide");
-        await updateDoc(ref, { coins: increment(win), lastQuizDate: TODAY, dailyPlayed: played });
+        await updateDoc(ref, { coins: increment(win), qLeft: qLeft, qIdx: qIdx });
       };
       box.appendChild(b);
     });
   };
   document.getElementById("nxt-btn").onclick = window.loadQ;
+
+  document.getElementById("ad-btn").onclick = async () => {
+
+   
 
 
